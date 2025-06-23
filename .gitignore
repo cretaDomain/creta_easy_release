@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /data/flutter_assets/assets/hycop_config.json
+/data/flutter_assets/NOTICES
+/data/flutter_assets/NOTICES.Z
 3rdparty/ffmpeg/bin/ffmpeg.exe
 *.mp4
 video/
@@ -48,3 +50,4 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
