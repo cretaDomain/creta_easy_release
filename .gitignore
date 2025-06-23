@@ -32,6 +32,11 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /data/flutter_assets/assets/hycop_config.json
+3rdparty/ffmpeg/bin/ffmpeg.exe
+*.mp4
+video/
+thumbnail/
+/data/flutter_assets/assets/NOTICES*
 
 # Symbolication related
 app.*.symbols
