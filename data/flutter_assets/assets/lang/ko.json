@@ -69,5 +69,21 @@
     "updateNotInInstallDir": "업데이트는 설치된 폴더(C:\\SQISOFT\\Creta)에서만 실행할 수 있습니다.",
     "updateFailed": "업데이트를 시작하는 데 실패했습니다: {e}",
     "updateConfirm": "새로운 버전이 있는지 확인하고 업데이트를 진행하시겠습니까? 앱이 재시작됩니다.",
-    "end": "종료"
+    "mobisMode": "모비스형",
+    "playTimeInfinite": "영구 재생",
+    "playTimeSeconds": "재생 시간 (초)",
+    "seconds": "초",
+    "playTimeRequired": "재생 시간을 입력해주세요.",
+    "playTimeInvalid": "유효한 숫자를 입력해주세요.",
+    "end": "종료",
+    "backgroundColor": "배경색",
+    "pickAColor": "색상 선택",
+    "preserveAspectRatio": "원본 사이즈 비율대로 보이기",
+    "stretchToFit": "페이지에 꽉차게 보이기",
+    "bookExistsTitle": "같은 이름의 북이 존재합니다",
+    "bookExistsMessage": "어떻게 하시겠습니까?",
+    "deleteAndCreateNew": "삭제하고 새로 만들기",
+    "createNewWithSuffix": "새 이름으로 만들기",
+    "appendToExisting": "이어 붙이기",
+    "prependToExisting": "앞에 붙이기"
 }
