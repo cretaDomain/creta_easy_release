@@ -85,5 +85,9 @@
     "deleteAndCreateNew": "삭제하고 새로 만들기",
     "createNewWithSuffix": "새 이름으로 만들기",
     "appendToExisting": "이어 붙이기",
-    "prependToExisting": "앞에 붙이기"
+    "prependToExisting": "앞에 붙이기",
+    "systemInfo": "시스템 정보",
+    "languageSetting": "언어 설정",
+    "error": "오류",
+    "success": "성공"
 }

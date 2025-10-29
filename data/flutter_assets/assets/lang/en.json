@@ -85,5 +85,9 @@
     "deleteAndCreateNew": "Delete and create new",
     "createNewWithSuffix": "Create with new name",
     "appendToExisting": "Append to existing",
-    "prependToExisting": "Prepend to existing"
+    "prependToExisting": "Prepend to existing",
+    "systemInfo": "System Information",
+    "languageSetting": "Language Setting",
+    "error": "Error",
+    "success": "Success"
 }

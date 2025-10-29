@@ -85,5 +85,9 @@
     "deleteAndCreateNew": "削除して新規作成",
     "createNewWithSuffix": "新しい名前で作成",
     "appendToExisting": "既存のブックに追加",
-    "prependToExisting": "先頭に追加"
+    "prependToExisting": "先頭に追加",
+    "systemInfo": "システム情報",
+    "languageSetting": "言語設定",
+    "error": "エラー",
+    "success": "成功"
 }
