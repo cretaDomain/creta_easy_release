@@ -9,9 +9,18 @@
     "basicBookFilter": [
         "All",
         "presentation",
-        "blackboard",
         "digital signage",
+        "blackboard",
         "digital barricade",
+        "escalator",
+        "CDU",
+        "etc"
+    ],
+    "sharedFilter": [
+        "all",
+        "my",
+        "team",
+        "shared",
         "etc"
     ],
     "basicBookSortFilter": [
@@ -85,6 +94,7 @@
         "3D",
         "Web",
         "Stream",
+        "Rich text",
         "end"
     ],
     "dailyEnglish": [
