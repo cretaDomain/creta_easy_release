@@ -113,10 +113,17 @@
     "animationSpeed": "アニメーション速度",
     "aniNone": "なし",
     "aniTickerSide": "横にスクロール",
-    "aniTickerUpDown": "縦にスクロール",
+    "aniShimmer": "文字を光らせる",
     "preview": "プレビュー",
     "textPreviewPlaceholder": "入力したテキストがここに表示されます",
-    "complete": "完了",
-    "insertBackgroundImage": "背景画像挿入",
-    "removeBackgroundImage": "背景削除"
+  "complete": "完了",
+  "insertBackgroundImage": "背景画像挿入",
+  "removeBackgroundImage": "背景削除",
+  "serverUrlSettings": "サーバーアドレス設定",
+  "homeUrl": "ホームURL",
+  "studioHomeUrl": "スタジオホームURL",
+  "save": "保存",
+  "serverUrlUpdated": "サーバーアドレスが更新されました。\nプログラムを再起動します。",
+  "serverUrlUpdateFailed": "サーバーアドレスの更新に失敗しました。\n{error}",
+  "closeAfterConfirm": "確認して終了"
 }

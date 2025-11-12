@@ -113,10 +113,17 @@
     "animationSpeed": "Animation Speed",
     "aniNone": "None",
     "aniTickerSide": "Scroll Horizontally",
-    "aniTickerUpDown": "Scroll Vertically",
+    "aniShimmer": "Shimmer Text",
     "preview": "Preview",
     "textPreviewPlaceholder": "Your text will appear here",
-    "complete": "Complete",
-    "insertBackgroundImage": "Insert Background",
-    "removeBackgroundImage": "Remove Background"
+  "complete": "Complete",
+  "insertBackgroundImage": "Insert Background",
+  "removeBackgroundImage": "Remove Background",
+  "serverUrlSettings": "Server URL Settings",
+  "homeUrl": "Home URL",
+  "studioHomeUrl": "Studio Home URL",
+  "save": "Save",
+  "serverUrlUpdated": "Server URL updated.\nRestarting the program.",
+  "serverUrlUpdateFailed": "Failed to update server URL.\n{error}",
+  "closeAfterConfirm": "Confirm & Exit"
 }
