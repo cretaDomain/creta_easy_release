@@ -2,11 +2,94 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
-import { spawn } from "child_process";
-import { existsSync } from "fs";
+import { spawn, exec } from "child_process";
+import { existsSync, readdirSync } from "fs";
 import path from "path";
+import { promisify } from "util";
+const execAsync = promisify(exec);
 // Creta_easy.exe 고정 경로
 const CRETA_EASY_EXE_PATH = "C:\\SQISOFT\\Creta\\Creta_easy.exe";
+// 랜덤 배경 이미지를 선택하는 함수
+function getRandomBackgroundImage() {
+    try {
+        const imagesDir = path.join(process.cwd(), "images", "weather");
+        if (!existsSync(imagesDir)) {
+            return null;
+        }
+        const files = readdirSync(imagesDir).filter(file => file.toLowerCase().endsWith('.png') ||
+            file.toLowerCase().endsWith('.jpg') ||
+            file.toLowerCase().endsWith('.jpeg'));
+        if (files.length === 0) {
+            return null;
+        }
+        const randomFile = files[Math.floor(Math.random() * files.length)];
+        return path.join(imagesDir, randomFile);
+    }
+    catch (error) {
+        return null;
+    }
+}
+// Creta_easy.exe 프로세스가 실행 중인지 확인하는 함수
+async function isCretaEasyRunning() {
+    try {
+        const { stdout: listOutput } = await execAsync('tasklist /FI "IMAGENAME eq Creta_easy.exe"');
+        // "INFO: No tasks" 메시지가 있으면 프로세스가 없는 것
+        if (listOutput.includes("INFO:") && listOutput.toLowerCase().includes("no tasks")) {
+            return false;
+        }
+        // 실제 프로세스 이름이 출력에 있는지 확인 (대소문자 무시)
+        const lowerOutput = listOutput.toLowerCase();
+        return lowerOutput.includes("creta_easy.exe");
+    }
+    catch (error) {
+        return false;
+    }
+}
+// Creta_easy.exe 프로세스를 종료하는 함수
+async function killCretaEasy() {
+    try {
+        const isRunning = await isCretaEasyRunning();
+        if (!isRunning) {
+            return {
+                success: true,
+                message: "프로세스가 실행되고 있지 않음"
+            };
+        }
+        // taskkill 명령으로 프로세스 종료
+        await execAsync('taskkill /IM Creta_easy.exe /F');
+        return {
+            success: true,
+            message: "프로세스 종료 완료"
+        };
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+            success: false,
+            message: `프로세스 종료 실패: ${errorMessage}`
+        };
+    }
+}
+// Creta_easy.exe 단순 실행 Tool 정의
+const START_CRETA_TOOL = {
+    name: "start_creta_easy",
+    description: "Creta_easy.exe를 아무 옵션 없이 단순 실행합니다. 사용자가 프로그램을 열어서 직접 사용하고 싶을 때 사용하세요.",
+    inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+    },
+};
+// Creta_easy.exe 종료 Tool 정의
+const STOP_CRETA_TOOL = {
+    name: "stop_creta_easy",
+    description: "실행 중인 Creta_easy.exe 프로세스를 종료합니다. 사용자가 프로그램을 닫고 싶을 때 사용하세요.",
+    inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+    },
+};
 // Creta_easy.exe 실행 Tool 정의
 const LAUNCH_CRETA_TOOL = {
     name: "launch_creta_easy",
@@ -25,8 +108,9 @@ const LAUNCH_CRETA_TOOL = {
         예시: "전송하실 텍스트 내용을 알려주세요."
       - text 매개변수에 전달하세요.
       - 배경 이미지가 필요한지 물어보세요.
-        예시: "배경 이미지를 함께 전송하시겠습니까? (파일 경로)"
-      - 배경 이미지가 있으면 bg_image 매개변수에 전달하세요.
+        예시: "배경 이미지를 함께 전송하시겠습니까? (파일 경로 또는 랜덤)"
+      - 특정 배경 이미지가 있으면 bg_image 매개변수에 전달하세요.
+      - 랜덤 배경 이미지를 원하면 bg_random을 true로 설정하세요.
 
 2. 그 다음 사용자에게 디바이스명을 지정할지 물어보세요.
    예시: "전송할 디바이스명을 지정하시겠습니까? (예: device1 device2)"
@@ -35,7 +119,8 @@ const LAUNCH_CRETA_TOOL = {
 
 주의사항:
 - file_path와 text 중 하나만 제공해야 합니다.
-- bg_image는 text와 함께만 사용 가능합니다 (file_path와는 사용 불가).
+- bg_image와 bg_random은 text와 함께만 사용 가능합니다 (file_path와는 사용 불가).
+- bg_image와 bg_random을 동시에 사용할 수 없습니다.
 
 이 도구는 자동으로 --autosend 옵션을 추가하여 자동으로 전송되도록 합니다.`,
     inputSchema: {
@@ -51,7 +136,11 @@ const LAUNCH_CRETA_TOOL = {
             },
             bg_image: {
                 type: "string",
-                description: "텍스트와 함께 전송할 배경 이미지 파일 경로 (text와 함께만 사용 가능). 예: C:\\Users\\username\\Pictures\\background.jpg",
+                description: "텍스트와 함께 전송할 배경 이미지 파일 경로 (text와 함께만 사용 가능, bg_random과 동시 사용 불가). 예: C:\\Users\\username\\Pictures\\background.jpg",
+            },
+            bg_random: {
+                type: "boolean",
+                description: "텍스트와 함께 랜덤 배경 이미지를 전송할지 여부 (text와 함께만 사용 가능, bg_image와 동시 사용 불가). true로 설정하면 images/weather 폴더에서 랜덤 이미지 선택",
             },
             devices: {
                 type: "array",
@@ -76,16 +165,127 @@ const server = new Server({
 // Tools 목록 핸들러
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-        tools: [LAUNCH_CRETA_TOOL],
+        tools: [START_CRETA_TOOL, STOP_CRETA_TOOL, LAUNCH_CRETA_TOOL],
     };
 });
 // Tool 호출 핸들러
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    // Creta Easy 단순 실행
+    if (request.params.name === "start_creta_easy") {
+        // Creta_easy.exe 존재 확인
+        if (!existsSync(CRETA_EASY_EXE_PATH)) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "Creta Easy가 설치되어있지 않습니다. 먼저 Creta Easy를 설치하여 주십시요",
+                    },
+                ],
+                isError: true,
+            };
+        }
+        try {
+            // 기존에 실행 중인 프로세스가 있으면 종료
+            let statusMessage = "";
+            const wasRunning = await isCretaEasyRunning();
+            if (wasRunning) {
+                const killResult = await killCretaEasy();
+                if (!killResult.success) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `오류: 기존 프로세스 종료 실패\n${killResult.message}`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+                statusMessage = "⚠️ 기존에 실행 중이던 Creta Easy를 종료했습니다.\n\n";
+            }
+            // Creta_easy.exe를 아무 옵션 없이 실행 (프로그램 종료를 기다리지 않음)
+            const child = spawn(CRETA_EASY_EXE_PATH, [], {
+                detached: true, // 부모 프로세스와 분리하여 독립 실행
+                stdio: 'ignore' // 표준 입출력 무시
+            });
+            // 부모 프로세스와 완전히 분리
+            child.unref();
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${statusMessage}✅ Creta Easy 프로그램이 실행되었습니다.\n\n실행 파일: ${CRETA_EASY_EXE_PATH}`,
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `오류: Creta_easy.exe 실행 실패\n${errorMessage}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+    // Creta Easy 종료
+    if (request.params.name === "stop_creta_easy") {
+        try {
+            const isRunning = await isCretaEasyRunning();
+            if (!isRunning) {
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: "ℹ️ Creta Easy 프로세스가 실행되고 있지 않습니다.",
+                        },
+                    ],
+                };
+            }
+            const killResult = await killCretaEasy();
+            if (!killResult.success) {
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `오류: ${killResult.message}`,
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `✅ Creta Easy 프로세스가 종료되었습니다.\n\n종료된 프로세스: Creta_easy.exe`,
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `오류: Creta Easy 프로세스 종료 실패\n${errorMessage}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
     // 파일 또는 텍스트 전송
     if (request.params.name === "launch_creta_easy") {
         const filePath = request.params.arguments?.file_path;
         const text = request.params.arguments?.text;
         const bgImage = request.params.arguments?.bg_image;
+        const bgRandom = request.params.arguments?.bg_random;
         const devices = request.params.arguments?.devices;
         // file_path와 text 중 하나만 제공되어야 함
         if (!filePath && !text) {
@@ -110,13 +310,36 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 isError: true,
             };
         }
-        // bg_image는 text와 함께만 사용 가능
+        // bg_image와 bg_random은 text와 함께만 사용 가능
         if (bgImage && !text) {
             return {
                 content: [
                     {
                         type: "text",
                         text: "오류: bg_image는 text 매개변수와 함께만 사용할 수 있습니다.",
+                    },
+                ],
+                isError: true,
+            };
+        }
+        if (bgRandom && !text) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "오류: bg_random은 text 매개변수와 함께만 사용할 수 있습니다.",
+                    },
+                ],
+                isError: true,
+            };
+        }
+        // bg_image와 bg_random을 동시에 사용할 수 없음
+        if (bgImage && bgRandom) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "오류: bg_image와 bg_random을 동시에 사용할 수 없습니다. 하나만 선택하세요.",
                     },
                 ],
                 isError: true,
@@ -159,6 +382,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         }
         try {
+            // bg_random이 true면 랜덤 이미지 선택
+            let selectedBgImage = bgImage;
+            if (bgRandom) {
+                const randomImage = getRandomBackgroundImage();
+                if (!randomImage) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: "오류: images/weather 폴더에서 배경 이미지를 찾을 수 없습니다.",
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+                selectedBgImage = randomImage;
+            }
+            // 기존에 실행 중인 프로세스가 있으면 종료
+            let statusMessage = "";
+            const wasRunning = await isCretaEasyRunning();
+            if (wasRunning) {
+                const killResult = await killCretaEasy();
+                if (!killResult.success) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `오류: 기존 프로세스 종료 실패\n${killResult.message}`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+                statusMessage = "⚠️ 기존에 실행 중이던 Creta Easy를 종료했습니다.\n\n";
+            }
             // 명령줄 인자 구성
             const args = [];
             // --autosend 옵션은 무조건 추가
@@ -179,9 +437,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 // 텍스트 전송
                 args.push('--text');
                 args.push(text);
-                // 배경 이미지가 있으면 추가
-                if (bgImage) {
-                    const targetBgPath = path.resolve(bgImage);
+                // 배경 이미지가 있으면 추가 (bgImage 또는 랜덤 선택된 이미지)
+                if (selectedBgImage) {
+                    const targetBgPath = path.resolve(selectedBgImage);
                     args.push('--bg');
                     args.push(targetBgPath);
                 }
@@ -194,7 +452,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             // 부모 프로세스와 완전히 분리
             child.unref();
             // 응답 메시지 구성 - 디버깅을 위해 실행된 명령어를 최우선으로 표시
-            let responseText = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            let responseText = statusMessage + `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 실행된 명령어 (Command Line):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -222,9 +480,14 @@ ${CRETA_EASY_EXE_PATH} ${args.join(' ')}
                 responseText += `\n전송 타입: 텍스트 전송`;
                 responseText += `\n텍스트 내용: "${text}"`;
                 // 배경 이미지가 있으면 표시
-                if (bgImage) {
-                    const targetBgPath = path.resolve(bgImage);
-                    responseText += `\n배경 이미지: ${path.basename(targetBgPath)}`;
+                if (selectedBgImage) {
+                    const targetBgPath = path.resolve(selectedBgImage);
+                    if (bgRandom) {
+                        responseText += `\n배경 이미지: ${path.basename(targetBgPath)} (랜덤 선택)`;
+                    }
+                    else {
+                        responseText += `\n배경 이미지: ${path.basename(targetBgPath)}`;
+                    }
                     responseText += `\n배경 이미지 경로: ${targetBgPath}`;
                 }
             }
