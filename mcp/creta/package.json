@@ -1,0 +1,35 @@
+{
+    "name": "creta-mcp-server",
+    "version": "1.0.0",
+    "description": "MCP server for Creta database operations",
+    "type": "module",
+    "main": "dist/index.js",
+    "bin": {
+        "creta-mcp": "dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "postbuild": "npm run copy:dist && npm run copy:config && npm run install:remote",
+        "copy:dist": "copyfiles -u 1 \"dist/**/*\" \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta/dist\"",
+        "copy:config": "copyfiles package.json package-lock.json \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta\"",
+        "install:remote": "cd \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta\" && npm install --production",
+        "dev": "tsc --watch",
+        "start": "node dist/index.js"
+    },
+    "keywords": [
+        "mcp",
+        "creta",
+        "database"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "node-fetch": "^3.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "copyfiles": "^2.4.1",
+        "typescript": "^5.3.0"
+    }
+}
