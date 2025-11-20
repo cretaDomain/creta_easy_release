@@ -3,32 +3,12 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { spawn, exec } from "child_process";
-import { existsSync, readdirSync } from "fs";
+import { existsSync } from "fs";
 import path from "path";
 import { promisify } from "util";
 const execAsync = promisify(exec);
 // Creta_easy.exe 고정 경로
 const CRETA_EASY_EXE_PATH = "C:\\SQISOFT\\Creta\\Creta_easy.exe";
-// 랜덤 배경 이미지를 선택하는 함수
-function getRandomBackgroundImage() {
-    try {
-        const imagesDir = path.join(process.cwd(), "images", "weather");
-        if (!existsSync(imagesDir)) {
-            return null;
-        }
-        const files = readdirSync(imagesDir).filter(file => file.toLowerCase().endsWith('.png') ||
-            file.toLowerCase().endsWith('.jpg') ||
-            file.toLowerCase().endsWith('.jpeg'));
-        if (files.length === 0) {
-            return null;
-        }
-        const randomFile = files[Math.floor(Math.random() * files.length)];
-        return path.join(imagesDir, randomFile);
-    }
-    catch (error) {
-        return null;
-    }
-}
 // Creta_easy.exe 프로세스가 실행 중인지 확인하는 함수
 async function isCretaEasyRunning() {
     try {
@@ -140,7 +120,7 @@ const LAUNCH_CRETA_TOOL = {
             },
             bg_random: {
                 type: "boolean",
-                description: "텍스트와 함께 랜덤 배경 이미지를 전송할지 여부 (text와 함께만 사용 가능, bg_image와 동시 사용 불가). true로 설정하면 images/weather 폴더에서 랜덤 이미지 선택",
+                description: "텍스트와 함께 랜덤 배경 이미지를 전송할지 여부 (text와 함께만 사용 가능, bg_image와 동시 사용 불가). true로 설정하면 Creta_easy가 알아서 랜덤 이미지를 선택합니다.",
             },
             devices: {
                 type: "array",
@@ -382,23 +362,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         }
         try {
-            // bg_random이 true면 랜덤 이미지 선택
-            let selectedBgImage = bgImage;
-            if (bgRandom) {
-                const randomImage = getRandomBackgroundImage();
-                if (!randomImage) {
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: "오류: images/weather 폴더에서 배경 이미지를 찾을 수 없습니다.",
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-                selectedBgImage = randomImage;
-            }
             // 기존에 실행 중인 프로세스가 있으면 종료
             let statusMessage = "";
             const wasRunning = await isCretaEasyRunning();
@@ -437,9 +400,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 // 텍스트 전송
                 args.push('--text');
                 args.push(text);
-                // 배경 이미지가 있으면 추가 (bgImage 또는 랜덤 선택된 이미지)
-                if (selectedBgImage) {
-                    const targetBgPath = path.resolve(selectedBgImage);
+                // 배경 이미지 옵션 추가
+                if (bgRandom) {
+                    // 랜덤 배경 이미지 옵션
+                    args.push('--bg-random');
+                }
+                else if (bgImage) {
+                    // 특정 배경 이미지 파일
+                    const targetBgPath = path.resolve(bgImage);
                     args.push('--bg');
                     args.push(targetBgPath);
                 }
@@ -479,15 +447,13 @@ ${CRETA_EASY_EXE_PATH} ${args.join(' ')}
             else if (text) {
                 responseText += `\n전송 타입: 텍스트 전송`;
                 responseText += `\n텍스트 내용: "${text}"`;
-                // 배경 이미지가 있으면 표시
-                if (selectedBgImage) {
-                    const targetBgPath = path.resolve(selectedBgImage);
-                    if (bgRandom) {
-                        responseText += `\n배경 이미지: ${path.basename(targetBgPath)} (랜덤 선택)`;
-                    }
-                    else {
-                        responseText += `\n배경 이미지: ${path.basename(targetBgPath)}`;
-                    }
+                // 배경 이미지 옵션 표시
+                if (bgRandom) {
+                    responseText += `\n배경 이미지: 랜덤 (--bg-random 옵션 사용)`;
+                }
+                else if (bgImage) {
+                    const targetBgPath = path.resolve(bgImage);
+                    responseText += `\n배경 이미지: ${path.basename(targetBgPath)}`;
                     responseText += `\n배경 이미지 경로: ${targetBgPath}`;
                 }
             }

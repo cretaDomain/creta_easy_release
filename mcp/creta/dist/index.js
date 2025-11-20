@@ -96,6 +96,32 @@ async function updateDevice(input) {
         throw error;
     }
 }
+/**
+ * Creta 디바이스를 제어합니다 (전원 끄기, 재부팅, 음소거, 볼륨 조정)
+ */
+async function controlDevice(input) {
+    const url = `${API_BASE_URL}controlDevice`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+            throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`디바이스 제어 실패: ${error.message}`);
+        }
+        throw error;
+    }
+}
 // MCP 서버 생성
 const server = new Server({
     name: "creta-mcp-server",
@@ -184,6 +210,49 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     },
                 },
                 required: ["deviceId", "bookName"],
+            },
+        },
+        {
+            name: "control_device",
+            description: "Creta 디바이스를 제어합니다 (전원 끄기, 재부팅, 음소거, 볼륨 조정). " +
+                "deviceId와 directive는 필수이며, cloudType은 선택사항입니다. " +
+                "directive가 'mute' 또는 'soundVolume'인 경우 arg 파라미터가 필수입니다.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    deviceId: {
+                        type: "string",
+                        description: "디바이스 ID (예: 'SQI-0001')",
+                    },
+                    cloudType: {
+                        type: "string",
+                        enum: ["supabase", "firebase"],
+                        description: `클라우드 데이터베이스 타입. 기본값: ${DEFAULT_CLOUD_TYPE_CONFIG}`,
+                    },
+                    directive: {
+                        type: "string",
+                        enum: ["power off", "reboot", "mute", "soundVolume"],
+                        description: "제어 명령: 'power off' (전원 끄기), 'reboot' (재부팅), " +
+                            "'mute' (음소거), 'soundVolume' (볼륨 조정)",
+                    },
+                    arg: {
+                        oneOf: [
+                            {
+                                type: "boolean",
+                                description: "directive가 'mute'인 경우: true(음소거) 또는 false(음소거 해제)"
+                            },
+                            {
+                                type: "number",
+                                minimum: 0,
+                                maximum: 100,
+                                description: "directive가 'soundVolume'인 경우: 0-100 사이의 숫자"
+                            }
+                        ],
+                        description: "directive가 'mute'인 경우: true(음소거) 또는 false(음소거 해제). " +
+                            "directive가 'soundVolume'인 경우: 0-100 사이의 숫자",
+                    },
+                },
+                required: ["deviceId", "directive"],
             },
         },
     ];
@@ -319,6 +388,126 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         text: JSON.stringify({
                             success: true,
                             message: `디바이스 '${input.deviceId}'에 '${input.bookName}' 방송/전송 완료`,
+                            result: result,
+                        }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: false,
+                            error: errorMessage,
+                        }, null, 2),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+    else if (request.params.name === "control_device") {
+        const args = request.params.arguments;
+        // 입력 유효성 검사
+        if (!args.deviceId || typeof args.deviceId !== "string") {
+            throw new Error("deviceId는 필수 문자열 파라미터입니다");
+        }
+        if (!args.directive || typeof args.directive !== "string") {
+            throw new Error("directive는 필수 문자열 파라미터입니다");
+        }
+        // directive 유효성 검사
+        const validDirectives = ["power off", "reboot", "mute", "soundVolume"];
+        if (!validDirectives.includes(args.directive)) {
+            throw new Error(`directive는 다음 중 하나여야 합니다: ${validDirectives.join(", ")}`);
+        }
+        // arg 변환 및 유효성 검사
+        let convertedArg = undefined;
+        if (args.directive === "mute") {
+            if (args.arg === undefined) {
+                throw new Error("directive가 'mute'인 경우 arg는 필수입니다 (true 또는 false)");
+            }
+            // boolean으로 변환
+            if (typeof args.arg === "boolean") {
+                convertedArg = args.arg;
+            }
+            else if (typeof args.arg === "string") {
+                if (args.arg.toLowerCase() === "true") {
+                    convertedArg = true;
+                }
+                else if (args.arg.toLowerCase() === "false") {
+                    convertedArg = false;
+                }
+                else {
+                    throw new Error("directive가 'mute'인 경우 arg는 true 또는 false여야 합니다");
+                }
+            }
+            else {
+                throw new Error("directive가 'mute'인 경우 arg는 boolean 값이어야 합니다");
+            }
+        }
+        else if (args.directive === "soundVolume") {
+            if (args.arg === undefined) {
+                throw new Error("directive가 'soundVolume'인 경우 arg는 필수입니다 (0-100)");
+            }
+            // 숫자로 변환
+            let numValue;
+            if (typeof args.arg === "number") {
+                numValue = args.arg;
+            }
+            else if (typeof args.arg === "string") {
+                numValue = Number(args.arg);
+                if (isNaN(numValue)) {
+                    throw new Error("directive가 'soundVolume'인 경우 arg는 유효한 숫자여야 합니다");
+                }
+            }
+            else {
+                throw new Error("directive가 'soundVolume'인 경우 arg는 숫자여야 합니다");
+            }
+            // 범위 검증
+            if (numValue < 0 || numValue > 100) {
+                throw new Error("directive가 'soundVolume'인 경우 arg는 0-100 사이의 숫자여야 합니다");
+            }
+            convertedArg = numValue;
+        }
+        // 기본값 적용
+        const input = {
+            deviceId: args.deviceId,
+            cloudType: args.cloudType || DEFAULT_CLOUD_TYPE_CONFIG,
+            directive: args.directive,
+            arg: convertedArg,
+        };
+        // cloudType 유효성 검사
+        if (!["supabase", "firebase"].includes(input.cloudType)) {
+            throw new Error("cloudType은 'supabase' 또는 'firebase'여야 합니다");
+        }
+        try {
+            const result = await controlDevice(input);
+            let actionMessage = "";
+            switch (input.directive) {
+                case "power off":
+                    actionMessage = "전원 끄기";
+                    break;
+                case "reboot":
+                    actionMessage = "재부팅";
+                    break;
+                case "mute":
+                    actionMessage = input.arg ? "음소거" : "음소거 해제";
+                    break;
+                case "soundVolume":
+                    actionMessage = `볼륨 ${input.arg}으로 조정`;
+                    break;
+            }
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: true,
+                            message: `디바이스 '${input.deviceId}' ${actionMessage} 완료`,
                             result: result,
                         }, null, 2),
                     },
