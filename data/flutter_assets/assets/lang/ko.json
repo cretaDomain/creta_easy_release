@@ -126,5 +126,18 @@
   "save": "저장",
   "serverUrlUpdated": "서버 주소가 업데이트되었습니다.\n프로그램을 다시 시작합니다.",
   "serverUrlUpdateFailed": "서버 주소 업데이트에 실패했습니다.\n{error}",
-  "closeAfterConfirm": "확인 후 종료"
+  "closeAfterConfirm": "확인 후 종료",
+  "sendSettings": "전송 설정",
+  "close": "닫기",
+  "powerOff": "전원 OFF",
+  "reboot": "리부트",
+  "volumeControl": "볼륨조정",
+  "apply": "적용",
+  "confirmPowerOff": "지금 디바이스를 shutdown 합니다. 정말로 실행하시겠습니까?",
+  "confirmReboot": "지금 디바이스를 리부트 합니다. 정말로 실행하시겠습니까?",
+  "claude": "Claude",
+  "claudeRunning": "Claude가 이미 실행 중입니다. 종료시키고 다시 실행시키시겠습니까?",
+  "claudeLaunchFailed": "Claude 실행에 실패했습니다.",
+  "yes": "Yes",
+  "no": "No"
 }
