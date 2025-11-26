@@ -4,20 +4,6 @@
     "description": "Creta Easy MCP 서버 - Claude Desktop에서 파일을 Creta_easy.exe로 자동 전송 (디바이스 지정 옵션 포함)",
     "type": "module",
     "main": "dist/index.js",
-    "scripts_old": {
-        "build": "tsc && npm run copy",
-        "copy": "copyfiles -u 0 \"dist/**/*\" \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta_easy/\"",
-        "watch": "tsc --watch",
-        "prepare": "npm run build"
-    },
-    "scripts": {
-        "build": "tsc",
-        "postbuild": "npm run copy:dist && npm run copy:config",
-        "copy:dist": "copyfiles -u 0 \"dist/**/*\" \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta_easy\"",
-        "copy:config": "copyfiles package.json package-lock.json \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta_easy\"",
-        "dev": "tsc --watch",
-        "prepare": "npm run build"
-    },
     "keywords": [
         "mcp",
         "creta",
