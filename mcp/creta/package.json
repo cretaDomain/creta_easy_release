@@ -7,6 +7,13 @@
     "bin": {
         "creta-mcp": "dist/index.js"
     },
+    "scripts": {
+        "build": "tsc",
+        "postbuild": "npm run copy:dist && npm run copy:config",
+        "copy:dist": "copyfiles -u 0 \"dist/**/*\" \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta\"",
+        "copy:config": "copyfiles package.json package-lock.json \"C:/project/creta/creta_easy/build/windows/x64/runner/Release/mcp/creta\"",
+        "dev": "tsc --watch"
+    },
     "keywords": [
         "mcp",
         "creta",
