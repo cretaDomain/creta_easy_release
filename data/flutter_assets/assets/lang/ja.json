@@ -139,5 +139,6 @@
   "claudeRunning": "Claudeはすでに実行中です。終了して再起動しますか？",
   "claudeLaunchFailed": "Claudeの起動に失敗しました。",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "changeContentOnly": "デバイスを選択せずにコンテンツのみ変更"
 }

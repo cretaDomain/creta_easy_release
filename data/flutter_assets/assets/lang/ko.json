@@ -139,5 +139,6 @@
   "claudeRunning": "Claude가 이미 실행 중입니다. 종료시키고 다시 실행시키시겠습니까?",
   "claudeLaunchFailed": "Claude 실행에 실패했습니다.",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "changeContentOnly": "디바이스 선택없이 콘텐츠만 변경"
 }
