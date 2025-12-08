@@ -71,6 +71,58 @@ async function getDevices(input) {
     }
 }
 /**
+ * Creta 데이터베이스에서 공유 디바이스 목록을 가져옵니다
+ */
+async function getSharedDevices(input) {
+    const url = `${API_BASE_URL}getSharedDevices`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+            throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`공유 디바이스 목록 가져오기 실패: ${error.message}`);
+        }
+        throw error;
+    }
+}
+/**
+ * Creta 데이터베이스에서 팀 디바이스 목록을 가져옵니다
+ */
+async function getTeamDevices(input) {
+    const url = `${API_BASE_URL}getTeamDevices`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+            throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`팀 디바이스 목록 가져오기 실패: ${error.message}`);
+        }
+        throw error;
+    }
+}
+/**
  * Creta 디바이스에 크레타북을 방송/전송합니다
  */
 async function updateDevice(input) {
@@ -186,6 +238,60 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     },
                 },
                 required: ["userId"],
+            },
+        },
+        {
+            name: "get_shared_devices",
+            description: "Creta 데이터베이스에서 기업의 공유 디바이스 목록을 가져옵니다. " +
+                "enterprise는 필수이며, selectColumn과 cloudType은 선택사항입니다 (설정된 기본값 사용).",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    enterprise: {
+                        type: "string",
+                        description: "기업/조직 ID",
+                    },
+                    selectColumn: {
+                        type: "array",
+                        items: {
+                            type: "string",
+                        },
+                        description: `선택할 컬럼 목록 (예: ['mid', 'name', 'modelName']). 기본값: ${JSON.stringify(DEFAULT_DEVICE_SELECT_COLUMN_CONFIG)}`,
+                    },
+                    cloudType: {
+                        type: "string",
+                        enum: ["supabase", "firebase"],
+                        description: `클라우드 데이터베이스 타입. 기본값: ${DEFAULT_CLOUD_TYPE_CONFIG}`,
+                    },
+                },
+                required: ["enterprise"],
+            },
+        },
+        {
+            name: "get_team_devices",
+            description: "Creta 데이터베이스에서 팀의 디바이스 목록을 가져옵니다. " +
+                "teamName은 필수이며, selectColumn과 cloudType은 선택사항입니다 (설정된 기본값 사용).",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    teamName: {
+                        type: "string",
+                        description: "팀 이름",
+                    },
+                    selectColumn: {
+                        type: "array",
+                        items: {
+                            type: "string",
+                        },
+                        description: `선택할 컬럼 목록 (예: ['mid', 'name', 'modelName']). 기본값: ${JSON.stringify(DEFAULT_DEVICE_SELECT_COLUMN_CONFIG)}`,
+                    },
+                    cloudType: {
+                        type: "string",
+                        enum: ["supabase", "firebase"],
+                        description: `클라우드 데이터베이스 타입. 기본값: ${DEFAULT_CLOUD_TYPE_CONFIG}`,
+                    },
+                },
+                required: ["teamName"],
             },
         },
         {
@@ -331,6 +437,106 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         try {
             const devices = await getDevices(input);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: true,
+                            count: devices.length,
+                            devices: devices,
+                        }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: false,
+                            error: errorMessage,
+                        }, null, 2),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+    else if (request.params.name === "get_shared_devices") {
+        const args = request.params.arguments;
+        // 입력 유효성 검사
+        if (!args.enterprise || typeof args.enterprise !== "string") {
+            throw new Error("enterprise는 필수 문자열 파라미터입니다");
+        }
+        // 기본값 적용
+        const input = {
+            enterprise: args.enterprise,
+            selectColumn: args.selectColumn || DEFAULT_DEVICE_SELECT_COLUMN_CONFIG,
+            cloudType: args.cloudType || DEFAULT_CLOUD_TYPE_CONFIG,
+        };
+        // 유효성 검사
+        if (!Array.isArray(input.selectColumn) || input.selectColumn.length === 0) {
+            throw new Error("selectColumn은 비어있지 않은 배열이어야 합니다");
+        }
+        if (!["supabase", "firebase"].includes(input.cloudType)) {
+            throw new Error("cloudType은 'supabase' 또는 'firebase'여야 합니다");
+        }
+        try {
+            const devices = await getSharedDevices(input);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: true,
+                            count: devices.length,
+                            devices: devices,
+                        }, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            success: false,
+                            error: errorMessage,
+                        }, null, 2),
+                    },
+                ],
+                isError: true,
+            };
+        }
+    }
+    else if (request.params.name === "get_team_devices") {
+        const args = request.params.arguments;
+        // 입력 유효성 검사
+        if (!args.teamName || typeof args.teamName !== "string") {
+            throw new Error("teamName은 필수 문자열 파라미터입니다");
+        }
+        // 기본값 적용
+        const input = {
+            teamName: args.teamName,
+            selectColumn: args.selectColumn || DEFAULT_DEVICE_SELECT_COLUMN_CONFIG,
+            cloudType: args.cloudType || DEFAULT_CLOUD_TYPE_CONFIG,
+        };
+        // 유효성 검사
+        if (!Array.isArray(input.selectColumn) || input.selectColumn.length === 0) {
+            throw new Error("selectColumn은 비어있지 않은 배열이어야 합니다");
+        }
+        if (!["supabase", "firebase"].includes(input.cloudType)) {
+            throw new Error("cloudType은 'supabase' 또는 'firebase'여야 합니다");
+        }
+        try {
+            const devices = await getTeamDevices(input);
             return {
                 content: [
                     {
