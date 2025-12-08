@@ -114,6 +114,12 @@
   "aniNone": "なし",
   "aniTickerSide": "横にスクロール",
   "aniShimmer": "文字を光らせる",
+  "aniRotate": "回転",
+  "aniFade": "フェード",
+  "aniFidget": "揺れる",
+  "aniTypewriter": "タイプライター",
+  "aniScaleTransition": "スケール",
+  "aniSlideTransition": "スライド",
   "preview": "プレビュー",
   "textPreviewPlaceholder": "入力したテキストがここに表示されます",
   "complete": "完了",
@@ -140,5 +146,9 @@
   "claudeLaunchFailed": "Claudeの起動に失敗しました。",
   "yes": "Yes",
   "no": "No",
-  "changeContentOnly": "デバイスを選択せずにコンテンツのみ変更"
+  "changeContentOnly": "デバイスを選択せずにコンテンツのみ変更",
+  "deviceViewMode": "デバイス表示モード",
+  "myDevices": "マイデバイス",
+  "teamDevices": "チームデバイス",
+  "sharedDevices": "共有デバイス"
 }

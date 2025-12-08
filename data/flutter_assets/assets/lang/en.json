@@ -114,6 +114,12 @@
   "aniNone": "None",
   "aniTickerSide": "Scroll Horizontally",
   "aniShimmer": "Shimmer Text",
+  "aniRotate": "Rotate",
+  "aniFade": "Fade",
+  "aniFidget": "Fidget",
+  "aniTypewriter": "Typewriter",
+  "aniScaleTransition": "Scale",
+  "aniSlideTransition": "Slide",
   "preview": "Preview",
   "textPreviewPlaceholder": "Your text will appear here",
   "complete": "Complete",
@@ -139,5 +145,10 @@
   "claudeRunning": "Claude is already running. Do you want to close and restart it?",
   "claudeLaunchFailed": "Failed to launch Claude.",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "changeContentOnly": "Change content only without device selection",
+  "deviceViewMode": "Device View Mode",
+  "myDevices": "My Devices",
+  "teamDevices": "Team Devices",
+  "sharedDevices": "Shared Devices"
 }

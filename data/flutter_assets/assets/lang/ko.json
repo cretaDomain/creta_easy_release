@@ -114,6 +114,12 @@
   "aniNone": "없음",
   "aniTickerSide": "옆으로 흐르기",
   "aniShimmer": "글자 반짝이기",
+  "aniRotate": "회전",
+  "aniFade": "페이드",
+  "aniFidget": "흔들림",
+  "aniTypewriter": "타자기",
+  "aniScaleTransition": "크기변화",
+  "aniSlideTransition": "슬라이드",
   "preview": "미리보기",
   "textPreviewPlaceholder": "입력한 텍스트가 여기에 표시됩니다",
   "complete": "완료",
@@ -140,5 +146,9 @@
   "claudeLaunchFailed": "Claude 실행에 실패했습니다.",
   "yes": "Yes",
   "no": "No",
-  "changeContentOnly": "디바이스 선택없이 콘텐츠만 변경"
+  "changeContentOnly": "디바이스 선택없이 콘텐츠만 변경",
+  "deviceViewMode": "디바이스 보기 모드",
+  "myDevices": "내 디바이스 보기",
+  "teamDevices": "팀 디바이스 보기",
+  "sharedDevices": "공유디바이스 보기"
 }
