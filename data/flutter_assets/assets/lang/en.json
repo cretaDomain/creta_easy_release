@@ -150,5 +150,9 @@
   "deviceViewMode": "Device View Mode",
   "myDevices": "My Devices",
   "teamDevices": "Team Devices",
-  "sharedDevices": "Shared Devices"
+  "sharedDevices": "Shared Devices",
+  "searchDevice": "Search Device",
+  "searchDeviceHint": "Search by ID, name or description...",
+  "description": "Description",
+  "noSearchResults": "No search results found."
 }
