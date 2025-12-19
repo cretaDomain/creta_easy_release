@@ -87,10 +87,10 @@ const LAUNCH_CRETA_TOOL = {
       - 전송할 텍스트를 물어보세요.
         예시: "전송하실 텍스트 내용을 알려주세요."
       - text 매개변수에 전달하세요.
-      - 배경 이미지가 필요한지 물어보세요.
-        예시: "배경 이미지를 함께 전송하시겠습니까? (파일 경로 또는 랜덤)"
-      - 특정 배경 이미지가 있으면 bg_image 매개변수에 전달하세요.
-      - 랜덤 배경 이미지를 원하면 bg_random을 true로 설정하세요.
+      - 배경 파일(이미지 또는 동영상)이 필요한지 물어보세요.
+        예시: "배경 파일(이미지 또는 동영상)을 함께 전송하시겠습니까? (파일 경로 또는 랜덤)"
+      - 특정 배경 파일이 있으면 bg_image 매개변수에 전달하세요.
+      - 랜덤 배경을 원하면 bg_random을 true로 설정하세요.
 
 2. 그 다음 사용자에게 디바이스명을 지정할지 물어보세요.
    예시: "전송할 디바이스명을 지정하시겠습니까? (예: device1 device2)"
@@ -116,11 +116,11 @@ const LAUNCH_CRETA_TOOL = {
             },
             bg_image: {
                 type: "string",
-                description: "텍스트와 함께 전송할 배경 이미지 파일 경로 (text와 함께만 사용 가능, bg_random과 동시 사용 불가). 예: C:\\Users\\username\\Pictures\\background.jpg",
+                description: "텍스트와 함께 전송할 배경 파일(이미지 또는 동영상) 경로 (text와 함께만 사용 가능, bg_random과 동시 사용 불가). 이미지 예: C:\\Users\\username\\Pictures\\background.jpg, 동영상 예: C:\\Users\\username\\Videos\\background.mp4",
             },
             bg_random: {
                 type: "boolean",
-                description: "텍스트와 함께 랜덤 배경 이미지를 전송할지 여부 (text와 함께만 사용 가능, bg_image와 동시 사용 불가). true로 설정하면 Creta_easy가 알아서 랜덤 이미지를 선택합니다.",
+                description: "텍스트와 함께 랜덤 배경(이미지 또는 동영상)을 전송할지 여부 (text와 함께만 사용 가능, bg_image와 동시 사용 불가). true로 설정하면 Creta_easy가 알아서 랜덤 배경을 선택합니다.",
             },
             devices: {
                 type: "array",
@@ -349,13 +349,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 isError: true,
             };
         }
-        // 배경 이미지 파일 존재 확인
+        // 배경 파일 존재 확인
         if (bgImage && !existsSync(bgImage)) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `오류: 배경 이미지 파일을 찾을 수 없습니다: ${bgImage}`,
+                        text: `오류: 배경 파일(이미지 또는 동영상)을 찾을 수 없습니다: ${bgImage}`,
                     },
                 ],
                 isError: true,
@@ -400,13 +400,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 // 텍스트 전송
                 args.push('--text');
                 args.push(text);
-                // 배경 이미지 옵션 추가
+                // 배경 파일 옵션 추가
                 if (bgRandom) {
-                    // 랜덤 배경 이미지 옵션
+                    // 랜덤 배경 파일 옵션
                     args.push('--bg-random');
                 }
                 else if (bgImage) {
-                    // 특정 배경 이미지 파일
+                    // 특정 배경 파일 (이미지 또는 동영상)
                     const targetBgPath = path.resolve(bgImage);
                     args.push('--bg');
                     args.push(targetBgPath);
@@ -447,14 +447,14 @@ ${CRETA_EASY_EXE_PATH} ${args.join(' ')}
             else if (text) {
                 responseText += `\n전송 타입: 텍스트 전송`;
                 responseText += `\n텍스트 내용: "${text}"`;
-                // 배경 이미지 옵션 표시
+                // 배경 파일 옵션 표시
                 if (bgRandom) {
-                    responseText += `\n배경 이미지: 랜덤 (--bg-random 옵션 사용)`;
+                    responseText += `\n배경: 랜덤 (--bg-random 옵션 사용)`;
                 }
                 else if (bgImage) {
                     const targetBgPath = path.resolve(bgImage);
-                    responseText += `\n배경 이미지: ${path.basename(targetBgPath)}`;
-                    responseText += `\n배경 이미지 경로: ${targetBgPath}`;
+                    responseText += `\n배경 파일: ${path.basename(targetBgPath)}`;
+                    responseText += `\n배경 파일 경로: ${targetBgPath}`;
                 }
             }
             if (devices && devices.length > 0) {
