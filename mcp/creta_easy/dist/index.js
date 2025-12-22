@@ -9,6 +9,16 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 // Creta_easy.exe 고정 경로
 const CRETA_EASY_EXE_PATH = "C:\\SQISOFT\\Creta\\Creta_easy.exe";
+// 지원되는 애니메이션 타입 목록
+const SUPPORTED_ANIMATIONS = [
+    "slideTransition",
+    "scaleTransition",
+    "rotate",
+    "fidget",
+    "fade",
+    "shimmer",
+    "typewriter",
+];
 // Creta_easy.exe 프로세스가 실행 중인지 확인하는 함수
 async function isCretaEasyRunning() {
     try {
@@ -70,6 +80,21 @@ const STOP_CRETA_TOOL = {
         required: [],
     },
 };
+// 애니메이션 목록 조회 Tool 정의
+const LIST_ANIMATIONS_TOOL = {
+    name: "list_creta_animations",
+    description: `Creta Easy에서 텍스트 전송 시 사용할 수 있는 애니메이션 종류를 보여줍니다.
+    
+사용자가 다음과 같은 요청을 할 때 이 도구를 사용하세요:
+- "애니메이션 종류에 뭐가 있는지 보여줘"
+- "어떤 애니메이션을 쓸 수 있어?"
+- "텍스트 애니메이션 목록 보여줘"`,
+    inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+    },
+};
 // Creta_easy.exe 실행 Tool 정의
 const LAUNCH_CRETA_TOOL = {
     name: "launch_creta_easy",
@@ -91,6 +116,18 @@ const LAUNCH_CRETA_TOOL = {
         예시: "배경 파일(이미지 또는 동영상)을 함께 전송하시겠습니까? (파일 경로 또는 랜덤)"
       - 특정 배경 파일이 있으면 bg_image 매개변수에 전달하세요.
       - 랜덤 배경을 원하면 bg_random을 true로 설정하세요.
+      - ⚠️ 중요: 사용자가 애니메이션을 지정했으면 animation 매개변수에 전달하세요.
+        만약 사용자가 애니메이션을 지정하지 않았다면, 이 도구를 호출하지 말고 먼저 사용자에게 
+        7가지 애니메이션 중 어떤 것을 적용할지 물어보세요:
+        "텍스트에 적용할 애니메이션을 선택해 주세요:
+        1. slideTransition - 슬라이드 전환
+        2. scaleTransition - 크기 전환
+        3. rotate - 회전
+        4. fidget - 떨림
+        5. fade - 페이드
+        6. shimmer - 반짝임
+        7. typewriter - 타자기
+        원하는 애니메이션 이름을 알려주세요."
 
 2. 그 다음 사용자에게 디바이스명을 지정할지 물어보세요.
    예시: "전송할 디바이스명을 지정하시겠습니까? (예: device1 device2)"
@@ -101,6 +138,7 @@ const LAUNCH_CRETA_TOOL = {
 - file_path와 text 중 하나만 제공해야 합니다.
 - bg_image와 bg_random은 text와 함께만 사용 가능합니다 (file_path와는 사용 불가).
 - bg_image와 bg_random을 동시에 사용할 수 없습니다.
+- animation은 text와 함께만 사용 가능합니다 (file_path와는 사용 불가).
 
 이 도구는 자동으로 --autosend 옵션을 추가하여 자동으로 전송되도록 합니다.`,
     inputSchema: {
@@ -113,6 +151,11 @@ const LAUNCH_CRETA_TOOL = {
             text: {
                 type: "string",
                 description: "전송할 텍스트 메시지. 예: \"안녕하세요\" (file_path와 동시 사용 불가)",
+            },
+            animation: {
+                type: "string",
+                enum: ["slideTransition", "scaleTransition", "rotate", "fidget", "fade", "shimmer", "typewriter"],
+                description: "텍스트에 적용할 애니메이션 타입 (text와 함께만 사용 가능). 지원되는 애니메이션: slideTransition(슬라이드), scaleTransition(크기 전환), rotate(회전), fidget(떨림), fade(페이드), shimmer(반짝임), typewriter(타자기)",
             },
             bg_image: {
                 type: "string",
@@ -145,7 +188,7 @@ const server = new Server({
 // Tools 목록 핸들러
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-        tools: [START_CRETA_TOOL, STOP_CRETA_TOOL, LAUNCH_CRETA_TOOL],
+        tools: [START_CRETA_TOOL, STOP_CRETA_TOOL, LAUNCH_CRETA_TOOL, LIST_ANIMATIONS_TOOL],
     };
 });
 // Tool 호출 핸들러
@@ -260,10 +303,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         }
     }
+    // 애니메이션 목록 조회
+    if (request.params.name === "list_creta_animations") {
+        const animationDescriptions = {
+            slideTransition: "슬라이드 전환 - 텍스트가 슬라이드하며 나타납니다",
+            scaleTransition: "크기 전환 - 텍스트가 크기가 변하며 나타납니다",
+            rotate: "회전 - 텍스트가 회전하며 나타납니다",
+            fidget: "떨림 - 텍스트가 떨리는 효과가 적용됩니다",
+            fade: "페이드 - 텍스트가 서서히 나타납니다",
+            shimmer: "반짝임 - 텍스트에 반짝이는 효과가 적용됩니다",
+            typewriter: "타자기 - 텍스트가 타자기처럼 한 글자씩 나타납니다",
+        };
+        let responseText = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 Creta Easy 텍스트 애니메이션 목록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+텍스트 전송 시 사용할 수 있는 애니메이션 종류입니다:
+
+`;
+        SUPPORTED_ANIMATIONS.forEach((animation, index) => {
+            responseText += `${index + 1}. ${animation}\n   └ ${animationDescriptions[animation]}\n\n`;
+        });
+        responseText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 사용 방법: 텍스트 전송 시 원하는 애니메이션 이름을 함께 지정하세요.
+   예: "안녕하세요 텍스트를 typewriter 애니메이션으로 전송해줘"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: responseText,
+                },
+            ],
+        };
+    }
     // 파일 또는 텍스트 전송
     if (request.params.name === "launch_creta_easy") {
         const filePath = request.params.arguments?.file_path;
         const text = request.params.arguments?.text;
+        const animation = request.params.arguments?.animation;
         const bgImage = request.params.arguments?.bg_image;
         const bgRandom = request.params.arguments?.bg_random;
         const devices = request.params.arguments?.devices;
@@ -323,6 +401,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     },
                 ],
                 isError: true,
+            };
+        }
+        // animation은 text와 함께만 사용 가능
+        if (animation && !text) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "오류: animation은 text 매개변수와 함께만 사용할 수 있습니다.",
+                    },
+                ],
+                isError: true,
+            };
+        }
+        // animation 유효성 검사
+        if (animation && !SUPPORTED_ANIMATIONS.includes(animation)) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `오류: 지원되지 않는 애니메이션 타입입니다: ${animation}\n\n지원되는 애니메이션 목록:\n${SUPPORTED_ANIMATIONS.map((ani, idx) => `${idx + 1}. ${ani}`).join('\n')}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+        // 텍스트 전송인데 애니메이션이 지정되지 않은 경우 - 사용자에게 선택 요청
+        if (text && !animation) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `📝 텍스트 전송에 적용할 애니메이션을 선택해 주세요.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 사용 가능한 애니메이션 목록:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. slideTransition - 슬라이드 전환
+2. scaleTransition - 크기 전환
+3. rotate - 회전
+4. fidget - 떨림
+5. fade - 페이드
+6. shimmer - 반짝임
+7. typewriter - 타자기
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+원하는 애니메이션 이름을 알려주세요.
+예: "typewriter" 또는 "fade"`,
+                    },
+                ],
             };
         }
         // Creta_easy.exe 존재 확인
@@ -400,6 +529,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 // 텍스트 전송
                 args.push('--text');
                 args.push(text);
+                // 애니메이션 옵션 추가
+                if (animation) {
+                    args.push(`--ani=${animation}`);
+                }
                 // 배경 파일 옵션 추가
                 if (bgRandom) {
                     // 랜덤 배경 파일 옵션
@@ -447,6 +580,10 @@ ${CRETA_EASY_EXE_PATH} ${args.join(' ')}
             else if (text) {
                 responseText += `\n전송 타입: 텍스트 전송`;
                 responseText += `\n텍스트 내용: "${text}"`;
+                // 애니메이션 옵션 표시
+                if (animation) {
+                    responseText += `\n애니메이션: ${animation}`;
+                }
                 // 배경 파일 옵션 표시
                 if (bgRandom) {
                     responseText += `\n배경: 랜덤 (--bg-random 옵션 사용)`;
